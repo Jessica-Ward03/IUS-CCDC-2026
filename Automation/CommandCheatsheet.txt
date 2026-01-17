@@ -1,0 +1,55 @@
+Fallback Commands
+-----------------------------------------------------
+Linux:
+
+	*List User Accounts*
+	cat /etc/passwd
+	
+	*List Authentication Logs*
+	cat /var/log/auth.log
+	or
+	cat /var/log/secure
+	
+	*List Currently Logged-in Users*
+	users
+	
+	*List Open Ports*
+	sudo ss -tuln
+	
+	*Change User Password*
+	sudo passwd USERNAME
+	
+	*Show lastest Login*
+	cat /var/log/lastlog
+	
+-----------------------------------------------------
+NMAP:
+
+	*Agressive scan*
+	nmap -A TARGET
+	
+	*Version detection scan*
+	nmap -sV TARGET
+	
+	*OS detection*
+	nmap -o TARGET
+	
+	*Firewall/Filter scan*
+	nmap -sA TARGET
+	
+	
+-----------------------------------------------------
+Windows:
+	
+	*Change user password*
+	net user USERNAME *
+	
+	*List all user accounts*
+	net user
+	
+	*List users with administrator privileges*
+	net localgroup Administrators
+	
+	
+-----------------------------------------------------	
+	

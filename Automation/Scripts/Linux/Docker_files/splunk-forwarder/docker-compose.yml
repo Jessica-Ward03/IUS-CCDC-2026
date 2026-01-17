@@ -1,0 +1,21 @@
+services:
+  splunk-forwarder:
+    image: splunk/universalforwarder:latest
+    container_name: splunk-forwarder 
+    hostname: docker-forwarder
+    restart: unless-stopped
+    group_add: #Idk if this does something honestly
+      - "4"
+    environment:             #DONT PUT RANDOM SPACES IN FRONT OF THINGS
+      - SPLUNK_USER=root
+      - SPLUNK_GROUP=root
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=REPLACE_THIS_PASSWORD     # Replace this Password!!!
+      - SPLUNK_FORWARD_SERVER={SPLUNK-IP}:9997   # Send data to main Splunk instance
+      - SPLUNK_STANDALONE_URL={SPLUNK-IP}:8089   # To Let the splunk instance know it is there. 
+      - SPLUNK_ADD=monitor /var/log/syslog, monitor /var/log/*.log, monitor /var/log/messages, monitor /var/log/secure, monitor /var/log,  monitor /opt/splunkforwarder/var/log/splunk #Should cover fedora and ufw.
+      - SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com
+    volumes:
+      - ./forwarder-data:/opt/splunkforwarder/var #Might not need this
+      - /var/log:/var/log  #might need to chown to add group sudo chown :splunk /var/log
+
