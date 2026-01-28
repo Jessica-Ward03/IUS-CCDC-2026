@@ -1,0 +1,44 @@
+$RulePrefix = "CCDC-DC-"
+$Profiles   = @("Domain","Private","Public")
+$RemoteScope = "LocalSubnet"   # safer default than "Any"
+
+Set-NetFirewallProfile -Profile $Profiles -Enabled True
+Set-NetFirewallProfile -Profile $Profiles -DefaultInboundAction Block -DefaultOutboundAction Allow
+
+
+Get-NetFirewallRule -DisplayName "$RulePrefix*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+
+
+New-NetFirewallRule -DisplayName "${RulePrefix}DNS-TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 53 -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}DNS-UDP" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 53 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# --- Kerberos (TCP/UDP 88)
+New-NetFirewallRule -DisplayName "${RulePrefix}Kerberos-TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 88  -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}Kerberos-UDP" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 88  -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}Kpasswd-TCP"  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 464 -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}Kpasswd-UDP"  -Direction Inbound -Action Allow -Protocol UDP -LocalPort 464 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# --- LDAP (TCP/UDP 389) + LDAPS (TCP 636)
+New-NetFirewallRule -DisplayName "${RulePrefix}LDAP-TCP"  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 389 -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}LDAP-UDP"  -Direction Inbound -Action Allow -Protocol UDP -LocalPort 389 -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}LDAPS-TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 636 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# --- Global Catalog (3268/3269)
+New-NetFirewallRule -DisplayName "${RulePrefix}GC-TCP"    -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3268 -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}GCSSL-TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3269 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# --- SMB (445) 
+New-NetFirewallRule -DisplayName "${RulePrefix}SMB-TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 445 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# --- RPC Endpoint Mapper (135)
+New-NetFirewallRule -DisplayName "${RulePrefix}RPC-135" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 135 -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}RPC-Dynamic" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 49152-65535 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# --- DFS Replication 
+New-NetFirewallRule -DisplayName "${RulePrefix}DFSR-5722" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5722 -Profile $Profiles -RemoteAddress $RemoteScope
+
+
+Disable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "Windows Remote Management" -ErrorAction SilentlyContinue | Out-Null
+
+Write-Host "CCDC DC firewall applied. Default inbound = BLOCK. Essential DC ports allowed to $RemoteScope."
