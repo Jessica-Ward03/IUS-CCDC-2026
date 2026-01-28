@@ -1,0 +1,22 @@
+
+$RulePrefix  = "CCDC-WEB-"
+$Profiles    = @("Domain","Private","Public")
+$RemoteScope = "Any"   # web usually needs broad access; change to LocalSubnet if only internal scoring
+
+# Enable firewall and block inbound by default
+Set-NetFirewallProfile -Profile $Profiles -Enabled True
+Set-NetFirewallProfile -Profile $Profiles -DefaultInboundAction Block -DefaultOutboundAction Allow
+
+# Remove old CCDC rules (safe re-run)
+Get-NetFirewallRule -DisplayName "$RulePrefix*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+
+# Allow HTTP/HTTPS
+New-NetFirewallRule -DisplayName "${RulePrefix}HTTP-80"  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 80  -Profile $Profiles -RemoteAddress $RemoteScope
+New-NetFirewallRule -DisplayName "${RulePrefix}HTTPS-443" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 443 -Profile $Profiles -RemoteAddress $RemoteScope
+
+
+Disable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "Windows Remote Management" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction SilentlyContinue | Out-Null
+
+Write-Host "CCDC Web firewall applied. Default inbound = BLOCK. Web ports allowed."
