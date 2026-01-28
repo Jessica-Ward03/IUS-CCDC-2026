@@ -1,0 +1,17 @@
+$RulePrefix = "CCDC-WKS-"
+$Profiles   = @("Domain","Private","Public")
+
+# Enable firewall and block inbound by default
+Set-NetFirewallProfile -Profile $Profiles -Enabled True
+Set-NetFirewallProfile -Profile $Profiles -DefaultInboundAction Block -DefaultOutboundAction Allow
+
+# Remove old CCDC rules (safe re-run)
+Get-NetFirewallRule -DisplayName "$RulePrefix*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+
+# Explicitly ensure common inbound exposure groups are off
+Disable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "Windows Remote Management" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "Network Discovery" -ErrorAction SilentlyContinue | Out-Null
+
+Write-Host "CCDC Workstation firewall applied. Default inbound = BLOCK. No inbound services allowed."
