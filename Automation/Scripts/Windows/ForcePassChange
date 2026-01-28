@@ -1,0 +1,51 @@
+Import-Module ActiveDirectory -ErrorAction Stop
+
+
+$SearchBase = $null
+
+$SkipDisabledUsers = $true
+$SkipBuiltInAccounts = @("Administrator")
+
+Write-Host "Starting password enforcement..." -ForegroundColor Cyan
+
+
+$filter = "ObjectClass -eq 'user' -and ObjectCategory -eq 'person'"
+if ($SkipDisabledUsers) {
+    $filter += " -and Enabled -eq 'True'"
+}
+
+# Get users
+if ([string]::IsNullOrWhiteSpace($SearchBase)) {
+    $users = Get-ADUser -Filter $filter `
+        -Properties PasswordNeverExpires, SamAccountName
+} else {
+    $users = Get-ADUser -SearchBase $SearchBase -Filter $filter `
+        -Properties PasswordNeverExpires, SamAccountName
+}
+
+# Exclude built-ins
+$targets = $users | Where-Object {
+    $_.SamAccountName -notin $SkipBuiltInAccounts
+}
+
+$changed = 0
+
+foreach ($u in $targets) {
+    try {
+        # Turn OFF "Password never expires"
+        if ($u.PasswordNeverExpires) {
+            Set-ADUser -Identity $u.SamAccountName -PasswordNeverExpires $false
+        }
+
+        # Force password change at next logon
+        Set-ADUser -Identity $u.SamAccountName -ChangePasswordAtLogon $true
+
+        Write-Host "Updated: $($u.SamAccountName)"
+        $changed++
+    }
+    catch {
+        Write-Warning "Failed: $($u.SamAccountName) - $($_.Exception.Message)"
+    }
+}
+
+Write-Host "`nDone. Accounts updated: $changed" -ForegroundColor Green
