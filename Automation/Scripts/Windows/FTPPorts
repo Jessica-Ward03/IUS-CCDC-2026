@@ -1,0 +1,27 @@
+$RulePrefix   = "CCDC-FTP-"
+$Profiles     = @("Domain","Private","Public")
+$RemoteScope  = "Any"  # FTP often needs broader access; change to LocalSubnet if internal-only
+$PassiveStart = 50000
+$PassiveEnd   = 50100
+
+# Enable firewall and block inbound by default
+Set-NetFirewallProfile -Profile $Profiles -Enabled True
+Set-NetFirewallProfile -Profile $Profiles -DefaultInboundAction Block -DefaultOutboundAction Allow
+
+# Remove old CCDC rules (safe re-run)
+Get-NetFirewallRule -DisplayName "$RulePrefix*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+
+# FTP Control
+New-NetFirewallRule -DisplayName "${RulePrefix}FTP-21" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 21 -Profile $Profiles -RemoteAddress $RemoteScope
+
+# FTP Passive Data Ports
+New-NetFirewallRule -DisplayName "${RulePrefix}FTP-Passive-${PassiveStart}-${PassiveEnd}" `
+  -Direction Inbound -Action Allow -Protocol TCP -LocalPort "$PassiveStart-$PassiveEnd" -Profile $Profiles -RemoteAddress $RemoteScope
+
+# Disable common remote mgmt exposures
+Disable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "Windows Remote Management" -ErrorAction SilentlyContinue | Out-Null
+Disable-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction SilentlyContinue | Out-Null
+
+Write-Host "CCDC FTP firewall applied. Default inbound = BLOCK. FTP 21 + passive range allowed."
+Write-Host "Reminder: Configure your FTP server to use passive ports $PassiveStart-$PassiveEnd."
