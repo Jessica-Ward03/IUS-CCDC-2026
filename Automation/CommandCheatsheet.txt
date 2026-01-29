@@ -15,12 +15,82 @@ Linux:
 	
 	*List Open Ports*
 	sudo ss -tuln
+
+	*List active connections*
+	sudo ss -tulpn
+
+	*Create new user with admin*
+	sudo useradd -m -G sudo new_username
+	sudo passwd new_username
 	
 	*Change User Password*
 	sudo passwd USERNAME
 	
 	*Show lastest Login*
 	cat /var/log/lastlog
+
+	*Lock password*
+	sudo passwd -l USERNAME
+
+	*Lock account*
+	sudo usermod -L USERNAME
+
+	*Unlock account*
+	sudod usermod -U USERNAME
+
+	*Check lock status*
+	sudo passwd -S USERNAME
+
+	*Prevent login via shells*
+	sudo usermod -s /sbin/nologin USERNAME
+	or
+	sudo usermod -s /bin/false USERNAME
+
+	*Stop service and disable service*
+	sudo systemctl stop SERVICE_NAME
+	sudo systemctl disable SERVICE_NAME
+
+	*Close specific port in firewall*
+	sudo firewall-cmd --permanent --remove-port=PORT/protocol
+
+	*Allow specific port in firewall*
+	sudo firewall-cmd --permanent --add-port=PORT/protocol
+
+	*Close a service in firewall*
+	sudo firewall-cmd --permanent --remove-service=SERVICE_NAME
+
+	*Allow a service in firewall*
+	sudo firewall-cmd --permanent --add-service=SERVICE_NAME
+
+	*Reload firewall rules*
+	sudo firewall-cmd --reload
+
+	*List firewall ports*
+	sudo firewall-cmd --list-ports
+
+	*Check firewall status*
+	sudo systemctl status firewalld
+
+	*Enable ufw*
+	sudo ufw enable
+
+	*Check UFW status*
+	sudo ufw status
+
+	*Deny port in UFW*
+	sudo ufw deny PORT/protocol
+
+	*Allow port in UFW*
+	sudo ufw allow PORT/protocol
+
+	*Deny service in UFW*
+	sudo ufw deny SERVICE_NAME
+
+	*Allow a service in UFW*
+	sudo ufw allow SERVICE_NAME
+
+	*List services in UFW*
+	sudo ufw app list
 	
 -----------------------------------------------------
 NMAP:
@@ -52,4 +122,3 @@ Windows:
 	
 	
 -----------------------------------------------------	
-	
