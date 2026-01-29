@@ -5,7 +5,7 @@
 ############################################################# 
 setup(){
 	#Set enviroment variables.
-	# 1. Check if .env file exists
+	# 1. Check if .env file exists, this is used for password and user stuff
 	
 	if [ -f .env ]; then
     		# 2. Start 'allexport' mode
@@ -17,20 +17,8 @@ setup(){
     		echo "Environment variables loaded."
 	else
     		echo ".env file not found!"
-    		exit 1
+    		#exit 1
 	fi
-
-
-	#Check for and create user list, allowing this script to be rerun multiple times without overwriting the backup admins.
-	FILE="user_list.txt"
-
-	if [ -f "$FILE" ]; then
-		#File exists, won't overwrite it.
-		echo "$FILE already exists."
-	else
-		cut -d: -f1 /etc/passwd > $FILE
-    		echo "Created $FILE!"
-	fi	
 
 
 	#Find OS and start methods just for those OS's
@@ -46,6 +34,7 @@ setup(){
        		run_fedora
 	else
 	echo "WARNING: Unable to complete setup because OS was not found. Please manually prepare the machine or run each script."
+	echo "Or you may be on splunk, which case means this main.sh does not work."
 	fi
 }
 
@@ -55,8 +44,14 @@ setup(){
 #############################################################
 run_ubuntu(){
 		#Password setup
-	backup_admin_setup_ubuntu
-	change_all_user_passwords
+	if grep -q "^$backup1:" /etc/passwd; then
+		#Do not run the password changing scripts
+		echo "You have already changed passwords change the .env backup admins to create new admins and rerun this script."
+	else
+   		backup_admin_setup_ubuntu
+		change_all_user_passwords
+	fi
+
 		#Put external scripts here!
 
 
@@ -80,8 +75,9 @@ run_ubuntu(){
 	sudo ./general/docker_setup.sh
 
 		#Nmap scan
-	echo "----Starting Nmap scan----"
-	sudo ./general/nmap_scan.sh
+	echo "-----Starting Nmap scan-----"
+	sudo ./general/nmap_baseline.sh
+	sudo ./general/nmap_compare.sh
 	
 		# ?Wireshark scan?
 		#Reboot to apply various tools, like selinux, correctly.
@@ -91,9 +87,15 @@ run_ubuntu(){
 }
 
 run_fedora(){
-		#Password setup
-	backup_admin_setup_fedora
-	change_all_user_passwords
+		#Password setupi
+	if grep -q "^$backup1:" /etc/passwd; then
+		#Do not run the password changing scripts
+		echo "You have already changed passwords change the .env backup admins to create new admins and rerun this script."
+	else
+		backup_admin_setup_fedora
+		change_all_user_passwords
+	fi
+
 		#Put external scripts here!
 	
 		#Tools 
