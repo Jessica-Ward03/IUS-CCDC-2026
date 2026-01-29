@@ -1,0 +1,25 @@
+Ubuntu Ecom:
+	Port 80 - http
+
+Fedora Webmail:
+	Port 25 - smtp
+	Port 110 - pop3
+	Port 587 - submission
+
+Splunk:
+	Port 8089 - For Splunk
+	Port 9997 - For Splunk
+	Maybe Port 8000 - http-alt
+
+Server 2019 AD/DNS:
+	Port 636 - LDAPS
+	Port 88 - kerberos-sec
+	Port 464 - kpasswd5
+	Port 3269 - globalcatLDAPssl
+
+Server 2019 Web:
+	Port 80 - http
+	Maybe Port 1801/2107 - msmq/msmq-mgmt (Check if needed)
+
+Server 2022 FTP:
+	Port 21 - FTP
