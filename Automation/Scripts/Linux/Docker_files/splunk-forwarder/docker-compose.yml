@@ -12,10 +12,13 @@ services:		#Please check .env file for more info
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_PASSWORD=${PASSWORD}     # Replace this Password!!!
       - SPLUNK_FORWARD_SERVER=${SPLUNK_INDEX_IP}:9997   # Send data to main Splunk instance
-      - SPLUNK_STANDALONE_URL=${SPLUNK_INDEX_IP}:8089   # To Let the splunk instance know it is there. 
+      - SPLUNK_DEPLOYMENT_SERVER=${SPLUNK_INDEX_IP}:8089   # To Let the splunk instance know it is there. 
       - SPLUNK_ADD=monitor /var/log/syslog, monitor /var/log/*.log, monitor /var/log/messages, monitor /var/log/secure, monitor /var/log,  monitor /opt/splunkforwarder/var/log/splunk #Should cover fedora and ufw.
       - SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com
     volumes:
       #- ./forwarder-data:/opt/splunkforwarder/var #Might not need this
       - /var/log:/var/log  #might need to chown to add group sudo chown :splunk /var/log
+    ports:
+      - "9997:9997" #Forwarder
+      - "8089:8089" #For managmenet stuff
 
