@@ -16,3 +16,4 @@ CCDC Linux Checklist:
 * Splunk forwarders set up -> splunk_Ubuntu.sh and splunk_Fedora.sh
 * NMAP scan shows only needed ports open -> No automation
 * Scripts securely removed from the box after use -> No automation
+* Set boxes to apt/dnf update (Done) and apply updates (Not done)
