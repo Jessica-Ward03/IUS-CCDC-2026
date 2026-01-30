@@ -57,11 +57,11 @@ run_ubuntu(){
 	#Admins
 	echo "----Creating Admin Accounts----"
 	sudo ./admins/create_admins.sh
-	echo "----Locking Old Account----"
-	sudo ./admins/lock_old_account.sh
 	
 	#Reboot to apply various tools, like selinux, correctly.
 	echo "----Rebooting to apply tools and other settings...----"
+	echo "IMPORTANT: Make sure to remove github directory!!!!"
+	echo "IMPORTANT: Make sure to run lock_old_account.sh after reboot on new admin account!!!!"
 	sleep 8
 	sudo reboot
 }
@@ -81,14 +81,14 @@ run_fedora(){
 	#Admins
 	echo "----Creating Admin Accounts----"
 	sudo ./admins/create_admins.sh
-	echo "----Locking Old Account----"	
-	sudo ./admins/lock_old_account.sh
 	
 	#General
 	echo "----Starting Selinux_config----"
 	sudo ./general/selinux_config.sh
 	
 	#Reboot to apply various tools, like selinux, correctly.
+	echo "IMPORTANT: Make sure to remove github directory!!!!"
+	echo "IMPORTANT: Make sure to run lock_old_account.sh after reboot on new admin account!!!!"
 	echo "Rebooting to apply tools and other settings..."
 	sleep 8
 	sudo reboot
