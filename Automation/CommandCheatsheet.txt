@@ -36,7 +36,7 @@ Linux:
 	sudo usermod -L USERNAME
 
 	*Unlock account*
-	sudod usermod -U USERNAME
+	sudo usermod -U USERNAME
 
 	*Check lock status*
 	sudo passwd -S USERNAME
