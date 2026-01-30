@@ -8,7 +8,7 @@ MGMT_PORT="9997"
 #SPLUNK_PASS="Changed123!" # Choose a strong password
 # URL for the 9.4.0 RPM (Check Splunk site for the latest download link)
 DOWNLOAD_URL="https://download.splunk.com/products/universalforwarder/releases/10.2.0/linux/splunkforwarder-10.2.0-d749cb17ea65.x86_64.rpm"
-SPLUNK_RPM="splunkforwarder-10.2.0-d749cb17ea65.x86_64.rpm "
+SPLUNK_RPM="splunkforwarder-10.2.0-d749cb17ea65.x86_64.rpm"
 
 echo "--- Starting Splunk UF Installation on Fedora ---"
 
