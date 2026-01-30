@@ -43,12 +43,12 @@ setup(){
 #! Put all the individual scripts to be run here.
 #############################################################
 run_ubuntu(){
-	
+	SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 	#Install  
 	echo "----Installing Ubuntu tools...----"
-	sudo ./install/install_tools_Ubuntu.sh
-	sudo ./install/banner_change.sh
-	sudo ./install/splunk_Ubuntu.sh
+	sudo "$SCRIPT_DIR./install/install_tools_Ubuntu.sh"
+	sudo "$SCRIPT_DIR./install/banner_change.sh"
+	sudo "$SCRIPT_DIR./install/splunk_Ubuntu.sh"
 	
 	#Firewall
 	echo "----Starting UFW config----"
@@ -72,6 +72,7 @@ run_ubuntu(){
 }
 
 run_fedora(){
+	SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 	#Install
 	echo "-----Installing Fedora tools...-----"
 	sudo ./install/install_tools_Fedora.sh
