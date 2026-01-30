@@ -18,4 +18,5 @@ if id "$OLD_ADMIN" &>/dev/null; then
     echo "Account has been disabled."
 else
     echo "User does not exist."
+
 fi
