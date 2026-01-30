@@ -43,7 +43,6 @@ setup(){
 #! Put all the individual scripts to be run here.
 #############################################################
 run_ubuntu(){
-	SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 	#Install  
 	echo "----Installing Ubuntu tools...----"
 	sudo ./install/install_tools_Ubuntu.sh
@@ -61,10 +60,6 @@ run_ubuntu(){
 	echo "----Locking Old Account----"
 	sudo ./admins/lock_old_account.sh
 	
-	#General
-	echo "----Starting Selinux_config----"
-	sudo ./general/selinux_config.sh
-	
 	#Reboot to apply various tools, like selinux, correctly.
 	echo "----Rebooting to apply tools and other settings...----"
 	sleep 8
@@ -72,7 +67,6 @@ run_ubuntu(){
 }
 
 run_fedora(){
-	SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 	#Install
 	echo "-----Installing Fedora tools...-----"
 	sudo ./install/install_tools_Fedora.sh
