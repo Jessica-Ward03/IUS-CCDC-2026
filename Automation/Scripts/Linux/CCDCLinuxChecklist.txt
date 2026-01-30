@@ -1,0 +1,18 @@
+CCDC Linux Checklist:
+* Tools installed -> install_tools_Ubuntu.sh and install_tools_Fedora.sh
+* Firewall enabled -> ufw.sh
+* Correct firewall rules -> open_ports_ufw.sh
+* New admin account created -> create_admins.sh
+* New admin account password secured -> create_admins.sh
+* Backup admdin account created -> create_admins.sh
+* Backup admin account password secured  -> create_admins.sh
+* Old admin account password change -> lock_old_account.sh
+* Old admin account password removed admin perms -> lock_old_account.sh
+* Old admin account locked/disable login -> lock_old_account.sh
+* SSH banner change -> banner_change.sh
+* Splunk setup on Splunk box -> No Automation
+* Splunk forwarders default password change -> ?
+* Splunk box hardening (Firewall, password, Admin account, backup admin account, lock old account) -> No automation
+* Splunk forwarders set up -> splunk_Ubuntu.sh and splunk_Fedora.sh
+* NMAP scan shows only needed ports open -> No automation
+* Scripts securely removed from the box after use -> No automation
