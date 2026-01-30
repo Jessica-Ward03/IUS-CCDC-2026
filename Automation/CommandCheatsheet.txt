@@ -2,6 +2,9 @@ Fallback Commands
 -----------------------------------------------------
 Linux:
 
+	*Make entire directory executable*
+	chmod -R +x directory_path
+
 	*List User Accounts*
 	cat /etc/passwd
 	
