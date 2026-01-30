@@ -1,60 +1,58 @@
 #!/bin/bash
 
-# --- Configuration ---
-# Update this URL with the latest .deb link from the Splunk website
-SPLUNK_DEB_URL="https://download.splunk.com/products/universalforwarder/releases/10.2.0/linux/splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb"
-SPLUNK_INSTALLER="splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb" 
-SPLUNK_HOME="/opt/splunkforwarder"
-# Set your deployment server if you have one
-DEPLOY_SERVER="" 
+# --- CONFIGURATION ---
+# Replace with your Splunk Indexer IP/DNS
+INDEXER_IP="172.20.242.20" 
+MGMT_PORT="9997"
+#SPLUNK_ADMIN="admin"
+#SPLUNK_PASS="Changed123!" # Choose a strong password
+# URL for the 9.4.0 RPM (Check Splunk site for the latest download link)
+DOWNLOAD_URL="https://download.splunk.com/products/universalforwarder/releases/10.2.0/linux/splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb"
+SPLUNK_RPM="splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb" 
 
-# --- Execution ---
+#VM arm testing link
+#wget -O splunkforwarder-10.2.0-d749cb17ea65-linux-arm64.deb "https://download.splunk.com/products/universalforwarder/releases/10.2.0/linux/splunkforwarder-10.2.0-d749cb17ea65-linux-arm64.deb"
 
-echo "--- Starting Splunk UF Installation for Ubuntu ---"
+#Correct AMD 64 bit for comp
+#wget -O splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb "https://download.splunk.com/products/universalforwarder/releases/10.2.0/linux/splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb"
 
-# 1. Update system and Install Dependencies
-echo "Step 1: Updating apt and installing wget..."
-sudo apt-get update && sudo apt-get install -y wget
+echo "--- Starting Splunk UF Installation on Fedora ---"
 
-# 2. Download the Debian package
-echo "Step 2: Downloading Splunk UF..."
-wget -O splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb "https://download.splunk.com/products/universalforwarder/releases/10.2.0/linux/splunkforwarder-10.2.0-d749cb17ea65-linux-amd64.deb"
+useradd -m splunkfwd
+groupadd splunkfwd
 
-# 3. Install the package
-echo "Step 3: Installing .deb package..."
-sudo dpkg -i ./$SPLUNK_INSTALLER
+# 1. Download the DebM
+echo "Downloading Splunk RPM..."
+wget -O "$SPLUNK_RPM" "$DOWNLOAD_URL"
 
-# 4. Enable boot-start and accept license
-# This creates the 'splunk' user and sets up the systemd unit
-echo "Step 4: Configuring boot-start and license..."
-sudo $SPLUNK_HOME/bin/splunk enable boot-start --accept-license --answer-yes --no-prompt --user splunk
+# 2. Install via dpkg
+echo "Installing RPM..."
+sudo dpkg -i ./"$SPLUNK_RPM"
 
-# 5. Fix Permissions
-# Ensure the splunk user owns the installation directory
-sudo chown -R splunk:splunk $SPLUNK_HOME
+# 3. Create user-seed.conf (Sets admin password automatically)
+echo "Setting credentials..."
 
-sudo -u splunk $SPLUNK_HOME/bin/splunk add monitor /var/log/ admin:$SPLUNK_ADMIN_PASS
+read -s -p "Enter username :" SPLUNK_ADMIN
+read -s -p "Enter Passwords :" SPLUNK_PASS
 
-sudo -u splunk $SPLUNK_HOME/bin/splunk monitor /var/log/syslog admin:$SPLUNK_ADMIN_PASS
+sudo tee /opt/splunkforwarder/etc/system/local/user-seed.conf > /dev/null <<EOF
+[user_info]
+USERNAME = $SPLUNK_ADMIN
+PASSWORD = $SPLUNK_PASS
+EOF
 
-sudo -u splunk $SPLUNK_HOME/bin/splunk add monitor /var/log/*.log  admin:$SPLUNK_ADMIN_PASS
+# 4. Enable Boot Start and Start Splunk
+echo "Accepting license and enabling boot-start..."
+sudo /opt/splunkforwarder/bin/splunk enable boot-start -user splunk --accept-license --no-prompt
 
-sudo -u splunk $SPLUNK_HOME/bin/splunk add monitor /opt/splunkforwarder/var/log/splunkauth admin:$SPLUNK_ADMIN_PASS
+# 5. Configure Forwarding
+echo "Configuring forwarder to talk to $INDEXER_IP..."
+sudo /opt/splunkforwarder/bin/splunk start
+sudo /opt/splunkforwarder/bin/splunk add forward-server $INDEXER_IP:$MGMT_PORT -auth $SPLUNK_ADMIN:$SPLUNK_PASS
 
-
-# 6. Start the service
-echo "Step 5: Starting Splunk service..."
-sudo systemctl start splunk
-
-# 7. Connect to Deployment Server (Optional)
-
-if [ -n "$DEPLOY_SERVER" ]; then
-    echo "Step 6: Setting deployment server..."
-    # Using default password 'Splunk123' - you'll be prompted to change this on first manual login
-    sudo -u splunk $SPLUNK_HOME/bin/splunk set deploy-poll "$DEPLOY_SERVER" -auth admin:Splunk123
-fi
-
-# 8. Cleanup
-rm $SPLUNK_INSTALLER
+# 6. Add Ubuntu Security Logs (var/log/*.log)
+echo "Adding /var/log/auth.log to monitor..."
+sudo /opt/splunkforwarder/bin/splunk add monitor /var/log/*.log -sourcetype syslog
 
 echo "--- Installation Complete! ---"
+sudo /opt/splunkforwarder/bin/splunk restart
