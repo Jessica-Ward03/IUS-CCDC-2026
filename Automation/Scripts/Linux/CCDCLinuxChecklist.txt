@@ -14,6 +14,8 @@ CCDC Linux Checklist:
 * Splunk forwarders default password change -> ?
 * Splunk box hardening (Firewall, password, Admin account, backup admin account, lock old account) -> No automation
 * Splunk forwarders set up -> splunk_Ubuntu.sh and splunk_Fedora.sh
+* Splunk Linux queries written -> splunk_dashboard.sh 
+* Splunk windows queries written -> ?
 * NMAP scan shows only needed ports open -> No automation
 * Scripts securely removed from the box after use -> No automation
 * Set boxes to apt/dnf update (Done) and apply updates (Not done)
