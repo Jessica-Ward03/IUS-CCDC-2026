@@ -1,0 +1,22 @@
+# Download the Windows MSI installer
+$splunkUrl = "https://mscampus.wustl.edu/Splunk/UniversalForwarder/Windows/64-bit/splunkforwarder-9.4.4-f627d88b766b-windows-x64.msi"
+$outputPath = "$env:TEMP\splunkforwarder.msi"
+
+Write-Host "Downloading Splunk Universal Forwarder..."
+Invoke-WebRequest -Uri $splunkUrl -OutFile $outputPath
+Write-Host "Installing Splunk Universal Forwarder..."
+Start-Process msiexec.exe -ArgumentList "/i `"$outputPath`" AGREETOLICENSE=yes /quiet" -Wait
+
+# Set Path For Splunk
+$splunkPath = "C:\Program Files\SplunkUniversalForwarder\bin\splunk.exe"
+& $splunkPath add forward-server 172.20.242.20:9997 -auth admin:changeme
+
+# Monitor Windows Event Logs
+& $splunkPath add monitor "C:\Windows\System32\winevt\Logs\Security.evtx"
+& $splunkPath add monitor "C:\Windows\System32\winevt\Logs\System.evtx"
+
+# Start Service
+& $splunkPath start
+
+Write-Host "Splunk forwarder configured and logs added for monitoring."
+# To run splunk do & $splunkPath enable boot-start --accept-license - -answer-yes --no prompt
