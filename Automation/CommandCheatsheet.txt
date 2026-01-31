@@ -49,6 +49,15 @@ Linux:
 	or
 	sudo usermod -s /bin/false USERNAME
 
+	*Restore shell login*
+	usermod -s /bin/bash USERNAME
+
+	*Expire account*
+	chage -E 0 USERNAME
+
+	*Restore expired account*
+	chage -E -1 USERNAME
+
 	*Stop service and disable service*
 	sudo systemctl stop SERVICE_NAME
 	sudo systemctl disable SERVICE_NAME
