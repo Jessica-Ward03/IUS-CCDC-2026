@@ -1,3 +1,4 @@
+# run this first wget -O splunkforwarder-10.2.0-d749cb17ea65-windows-x64.msi "https://download.splunk.com/products/universalforwarder/releases/10.2.0/windows/splunkforwarder-10.2.0-d749cb17ea65-windows-x64.msi"
 # Download the Windows MSI installer
 $splunkUrl = "https://mscampus.wustl.edu/Splunk/UniversalForwarder/Windows/64-bit/splunkforwarder-9.4.4-f627d88b766b-windows-x64.msi"
 $outputPath = "$env:TEMP\splunkforwarder.msi"
