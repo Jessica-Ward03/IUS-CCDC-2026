@@ -12,6 +12,8 @@ SPLUNK_RPM="splunkforwarder-10.2.0-d749cb17ea65.x86_64.rpm"
 
 echo "--- Starting Splunk UF Installation on Fedora ---"
 
+export SPLUNK_HOME="/opt/splunkforwarder"
+
 useradd -m splunkfwd
 groupadd splunkfwd
 
@@ -23,37 +25,4 @@ wget -O "$SPLUNK_RPM" "$DOWNLOAD_URL"
 echo "Installing RPM..."
 sudo dnf install -y ./"$SPLUNK_RPM"
 
-# 3. Create user-seed.conf (Sets admin password automatically)
-echo "Setting credentials..."
-
-read -s -p "Enter username :" SPLUNK_ADMIN
-read -s -p "Enter Passwords :" SPLUNK_PASS
-
-sudo tee /opt/splunkforwarder/etc/system/local/user-seed.conf > /dev/null <<EOF
-[user_info]
-USERNAME = $SPLUNK_ADMIN
-PASSWORD = $SPLUNK_PASS
-EOF
-
-# 4. Enable Boot Start and Start Splunk
-echo "Accepting license and enabling boot-start..."
-sudo /opt/splunkforwarder/bin/splunk enable boot-start -user splunk --accept-license --no-prompt
-
-# 5. Configure Forwarding
-echo "Configuring forwarder to talk to $INDEXER_IP..."
-sudo /opt/splunkforwarder/bin/splunk start
-sudo /opt/splunkforwarder/bin/splunk add forward-server $INDEXER_IP:$MGMT_PORT -auth $SPLUNK_ADMIN:$SPLUNK_PASS
-
-# 6. Add Fedora Security Logs
-echo "Adding /var/log/secure to monitor..."
-sudo /opt/splunkforwarder/bin/splunk add monitor /var/log/secure -sourcetype linux_secure
-
-# 7. SELinux Fix (Crucial for Fedora)
-echo "Applying SELinux policy for Splunk..."
-sudo semanage fcontext -a -t bin_t '/opt/splunkforwarder/bin(/.*)?'
-sudo restorecon -Rv /opt/splunkforwarder
-# Allow Splunk to read system logs
-sudo setsebool -P splunkd_disable_trans 1 2>/dev/null || echo "Standard SELinux bool set failed, moving to manual audit allow..."
-
-echo "--- Installation Complete! ---"
-sudo /opt/splunkforwarder/bin/splunk restart
+echo "Splunk packages installed, please manually set up and start splunk!"
