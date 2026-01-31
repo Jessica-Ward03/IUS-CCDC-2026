@@ -40,8 +40,11 @@ if getent group wheel >/dev/null; then
     gpasswd -d "$OLD_ADMIN" wheel 2>/dev/null || true
 fi
 
+echo "Disabling login shell..."
+usermod -s /sbin/nologin "$OLD_ADMIN"
+
 echo "Locking and expiring account..."
 usermod -L "$OLD_ADMIN"
 chage -E 0 "$OLD_ADMIN"
 
-echo "Account '$OLD_ADMIN' has been disabled successfully."
+echo "Account has been disabled successfully."
