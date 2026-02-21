@@ -1,0 +1,107 @@
+
+Preloaded Malware Check
+Services
+Event ID 7045 = new service installed
+Check immediately:
+Get-WinEvent -FilterHashtable @{LogName='System'; Id=7045} | Select TimeCreated, Message
+Also list services sorted by install/start:
+Get-Service | Sort StartType
+Red flags:
+•	Random names
+•	Services running from:
+C:\Users\
+C:\ProgramData\
+Temp\
+________________________________________
+Scheduled Tasks
+Check:
+schtasks /query /fo LIST /v
+Look for:
+•	PowerShell commands
+•	Hidden tasks
+•	Tasks running from user directories
+________________________________________
+Startup Locations
+Check registry autoruns:
+reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Run
+reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+Also:
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup
+________________________________________
+WMI Event Subscriptions
+Get-WmiObject -Namespace root\subscription -Class __EventFilter
+Get-WmiObject -Namespace root\subscription -Class CommandLineEventConsumer
+Investigate powershell commands if any are seen
+________________________________________
+Beaconing malware usually:
+•	connects outbound every X seconds
+•	talks to unusual IPs
+•	uses PowerShell or wscript
+Find suspicious network activity
+netstat -ano
+Look for:
+•	ESTABLISHED connections to external IPs
+•	Processes you don’t recognize
+Then identify process:
+Get-Process -Id <PID>
+Huge red flag:
+powershell.exe
+wscript.exe
+mshta.exe
+rundll32.exe
+making external connections.
+________________________________________
+Use Defender logs
+Check:
+Microsoft-Windows-Windows Defender/Operational
+Events:
+1116 Malware detected
+Many preloaded beacons show up here.
+________________________________________
+Enable Process Creation Logging Immediately
+Run:
+auditpol /set /subcategory:"Process Creation" /success:enable
+reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\Audit" /v ProcessCreationIncludeCmdLine_Enabled /t REG_DWORD /d 1 /f
+Now Event 4688 shows command lines.
+This catches:
+•	webshell execution
+•	beacon launchers
+•	reverse shells
+________________________________________
+Enable PowerShell Script Block Logging
+reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging /v EnableScriptBlockLogging /t REG_DWORD /d 1 /f
+Now you see:
+Event 4104
+Which literally shows attacker commands.
+________________________________________
+Do NOT immediately delete random things.
+Instead:
+If you find suspicious service/task:
+1.	Disable it first:
+Stop-Service <name>
+Set-Service <name> -StartupType Disabled
+2.	Observe:
+•	Did scoring break?
+•	Did network traffic stop?
+Then remove if safe.
+________________________________________
+If you find suspicious outbound connection:
+Temporarily block IP:
+New-NetFirewallRule -DisplayName "Block-C2" -Direction Outbound -Action Block -RemoteAddress <IP>
+This is competition-safe and reversible.
+________________________________________
+Use Splunk to Spot Beaconing Automatically
+Create search:
+index=wineventlog EventCode=4688 powershell
+Look for repeated execution.
+Also:
+index=wineventlog EventCode=4625
+Beaconing often causes auth failures.
+________________________________________
+Quick “Initial Compromise Checklist” (Run on Every Windows Box)
+Get-Service | Where {$_.Status -eq "Running"}
+schtasks /query /fo LIST /v
+netstat -ano
+Get-WmiObject -Namespace root\subscription -Class __EventFilter
+You can finish a host review in ~3 minutes.
+
