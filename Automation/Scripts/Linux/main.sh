@@ -43,55 +43,33 @@ setup(){
 #! Put all the individual scripts to be run here.
 #############################################################
 run_ubuntu(){
-	#Install  
-	echo "----Installing Ubuntu tools...----"
-	sudo ./install/install_tools_Ubuntu.sh
-	sudo ./install/banner_change.sh
-	sudo ./install/splunk_Ubuntu.sh
-	
-	#Firewall
-	echo "----Starting UFW config----"
-	sudo ./firewall/ufw.sh
-	sudo ./firewall/open_ports_ufw.sh
-	
-	#Admins
+
+	echo "----Conducting Initial Hardening...----"
+	sudo ./admins/initial_hardening.sh
+
 	echo "----Creating Admin Accounts----"
 	sudo ./admins/create_admins.sh
+
+	echo "----Locking old account----"
+	sudo ./admins/lock_old_account.sh
+
+	echo "----COMPLETE----"
 	
-	#Reboot to apply various tools, like selinux, correctly.
-	echo "----Rebooting to apply tools and other settings...----"
-	echo "IMPORTANT: Make sure to remove github directory!!!!"
-	echo "IMPORTANT: Make sure to run lock_old_account.sh after reboot on new admin account!!!!"
-	sleep 8
-	sudo reboot
 }
 
 run_fedora(){
-	#Install
-	echo "-----Installing Fedora tools...-----"
-	sudo ./install/install_tools_Fedora.sh
-	sudo ./install/banner_change.sh
-	sudo ./install/splunk_Fedora.sh
 	
-	#Firewall
-	echo "-----Starting UFW config------"
-	sudo ./firewall/ufw.sh
-	sudo ./firewall/open_ports_ufw.sh
-	
-	#Admins
+	echo "----Conducting Initial Hardening...----"
+	sudo ./admins/initial_hardening.sh
+
 	echo "----Creating Admin Accounts----"
 	sudo ./admins/create_admins.sh
 	
-	#General
-	echo "----Starting Selinux_config----"
-	sudo ./general/selinux_config.sh
+	echo "----Locking old account----"
+	sudo ./admins/lock_old_account.sh
+
+	echo "----COMPLETE----"
 	
-	#Reboot to apply various tools, like selinux, correctly.
-	echo "IMPORTANT: Make sure to remove github directory!!!!"
-	echo "IMPORTANT: Make sure to run lock_old_account.sh after reboot on new admin account!!!!"
-	echo "Rebooting to apply tools and other settings..."
-	sleep 8
-	sudo reboot
 }
 
 setup_home() {
