@@ -32,86 +32,74 @@ echo "4) Oracle Splunk"
 
 read -rp "Enter choice [1-4]: " ROLE
 
-##############################
-# Ubuntu UFW
-##############################
+################################
+# Install & Use UFW Everywhere
+################################
 
+echo
+echo "Installing and configuring UFW..."
+
+# Install UFW depending on distro
 if [[ "$OS_ID" == "ubuntu" || "$OS_ID" == "debian" ]]; then
-    echo "Using UFW..."
+    apt update
+    apt install -y ufw
+elif [[ "$OS_ID" == "fedora" || "$OS_ID" == "ol" || "$OS_ID" == "oraclelinux" ]]; then
+    dnf install -y ufw
 
-    if ! command -v ufw >/dev/null; then
-        apt update
-        apt install -y ufw
+    # Disable firewalld if it exists
+    if systemctl list-unit-files | grep -q firewalld; then
+        systemctl disable --now firewalld || true
     fi
+else
+    echo "Unsupported OS."
+    exit 1
+fi
 
-    ufw --force reset
-    ufw default deny incoming
-    ufw default allow outgoing
+# Reset UFW
+ufw --force reset
+ufw default deny incoming
+ufw default allow outgoing
 
-    ufw allow 123/udp
-    ufw allow 8089/tcp
+# Always allow NTP
+ufw allow 123/udp
+
+################################
+# Role-based rules
+################################
 
 case "$ROLE" in
     1)
-      echo "Ubuntu Workstation selected (NTP, Splunk only)."
-      ;;
-    3)
-      echo "Ubuntu E-commerce selected."
-      ufw allow 80/tcp
-      ufw allow 443/tcp
-      ufw allow 8089/tcp
-      ;;
-    *)
-      echo "Invalid role for Ubuntu."
-      exit 1
-      ;;
-  esac
-
-  ufw --force enable
-  ufw status verbose
-  exit 0
-fi
-
-##############################
-# Fedora / Oracle (firewalld)
-##############################
-
-if [[ "$OS_ID" == "fedora" || "$OS_ID" == "ol" || "$OS_ID" == "oraclelinux" ]]; then
-  echo "Using firewalld..."
-
-  dnf install -y firewalld
-  systemctl enable --now firewalld
-
-  # Set sane defaults
-  firewall-cmd --set-default-zone=public
-
-  # Always allow NTP
-  firewall-cmd --permanent --add-service=ntp
-
-  case "$ROLE" in
+        echo "Ubuntu Workstation selected."
+        ufw allow 8089/tcp
+        ;;
     2)
-      echo "Fedora Webmail selected."
-      firewall-cmd --permanent --add-port=25/tcp
-      firewall-cmd --permanent --add-port=110/tcp
-      firewall-cmd --permanent --add-port=587/tcp
-      firewall-cmd --permanent --add-port=8089/tcp
-      ;;
+        echo "Fedora Webmail selected."
+        ufw allow 25/tcp
+        ufw allow 110/tcp
+        ufw allow 587/tcp
+        ufw allow 8089/tcp
+        ;;
+    3)
+        echo "Ubuntu E-commerce selected."
+        ufw allow 80/tcp
+        ufw allow 443/tcp
+        ufw allow 8089/tcp
+        ;;
     4)
-      echo "Oracle Splunk selected."
-      firewall-cmd --permanent --add-port=8000/tcp
-      firewall-cmd --permanent --add-port=8089/tcp
-      firewall-cmd --permanent --add-port=9997/tcp
-      ;;
+        echo "Oracle Splunk selected."
+        ufw allow 8000/tcp
+        ufw allow 8089/tcp
+        ufw allow 9997/tcp
+        ;;
     *)
-      echo "Invalid role for this OS."
-      exit 1
-      ;;
-  esac
+        echo "Invalid selection."
+        exit 1
+        ;;
+esac
 
-  firewall-cmd --reload
-  firewall-cmd --list-all
-  exit 0
-fi
+# Enable UFW
+ufw --force enable
+ufw status verbose
 
-echo "Unsupported OS."
-exit 1
+echo
+echo "===== Hardening Complete ====="
