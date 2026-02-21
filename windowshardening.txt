@@ -1,0 +1,683 @@
+CCDC Windows handbook
+PHASE 0 
+Windows Systems in your diagram
+•	AD / DNS(Domain controller) → Windows Server 2019 
+•	Web → Windows Server 2019
+•	FTP → Windows Server 2022
+•	Workstation → Windows 11
+________________________________________
+PHASE 1 - Immediate Account Security 
+1. Rotate ALL Passwords
+CHANGE PASSWORDS FOR ALL ADMIN ACCOUNTS
+On Domain Controller:
+net user administrator *
+Check for extra admins
+net localgroup administrators
+Remove anything suspicious.
+________________________________________
+2. Disable or Remove Unnecessary Accounts
+On Domain Controller
+Get-ADUser -Filter * | Select Name,Enabled
+Disable anything not required:
+Disable-ADAccount -Identity username
+________________________________________
+3. Enforce Strong Password Policy (Domain)
+ 
+STEP 1 - Open Group Policy Management
+________________________________________
+STEP 2 - Edit the Default Domain Policy
+Password policies must be set at the domain level.
+In the left pane:
+1.	Expand your Forest
+2.	Expand Domains
+3.	Click your domain name 
+4.	Right-click Default Domain Policy
+5.	Click Edit
+________________________________________
+STEP 3 — Navigate to Password Policy
+In the Group Policy Editor:
+Computer Configuration
+ └─ Policies
+    └─ Windows Settings
+       └─ Security Settings
+          └─ Account Policies
+             └─ Password Policy
+________________________________________
+STEP 4 - Configure Password Settings Values
+Set the following one by one:
+ Enforce password history
+•	Value: 24 passwords remembered
+Prevents password reuse.
+________________________________________
+Maximum password age
+•	Value: 60 days
+Forces periodic changes without annoying users too often.
+________________________________________
+Minimum password age
+•	Value: 1 day
+Prevents rapid cycling to reuse an old password.
+________________________________________
+Minimum password length
+•	Value: 14 characters
+This is a huge security boost and CCDC-friendly.
+________________________________________
+Password must meet complexity requirements
+•	Enabled
+Requires:
+•	Uppercase
+•	Lowercase
+•	Number
+•	Special character
+________________________________________
+STEP 5 - Configure Account Lockout Policy
+Navigate to:
+Account Policies
+ └─ Account Lockout Policy
+Set these values:
+ Account lockout threshold
+•	5 invalid attempts
+________________________________________
+ Account lockout duration
+•	30 minutes
+________________________________________
+ Reset account lockout counter after
+•	30 minutes
+This prevents brute-force attacks.
+________________________________________
+STEP 6 -Apply & Close
+1.	Close the Group Policy Editor
+2.	Policy saves automatically
+________________________________________
+STEP 7 - Force the Policy to Apply
+On the Domain Controller:
+gpupdate /force
+
+________________________________________
+STEP 8 - Force Users to Change Passwords 
+To force all users to change passwords at next login:
+Run ForcePassChange Script________________________________________
+PHASE 2 - Lock Down Remote Access (EACH WINDOWS MACHINE)
+Disable RDP via System Settings
+On the machine you want to lock down:
+1.	Press Win + R or search run
+2.	Type:
+3.	SystemPropertiesRemote
+4.	Under Remote Desktop:
+o	Select  Don’t allow remote connections to this computer
+5.	Click Apply → OK
+________________________________________
+
+PHASE 3 — Firewall Hardening (ALL WINDOWS MACHINE)
+7. Enable Windows Firewall 
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+________________________________________
+8. Allow Only Required Ports
+Each windows machine has a designated script in the repo. Run the designated script as admin on the machine________________________________________
+Block SMB From Workstation
+Workstations should not host SMB
+Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
+________________________________________
+PHASE 4 - Patch 
+9. Windows Updates 
+Install-Module PSWindowsUpdate
+Get-WindowsUpdate
+Install-WindowsUpdate -AcceptAll -AutoReboot
+Reboot when needed.
+________________________________________
+PHASE 5 - Services Hardening(Every MACHINE)
+10. Disable Unnecessary Services 
+On every machine:
+services.msc
+Disable if unused:
+•	Print Spooler
+•	Remote Registry
+•	Bluetooth
+•	SNMP
+PHASE 6 - Active Directory Hardening (DOMIAN CONTROLLER)
+11. Secure Domain Admins
+Only 2 users
+Domain Admins
+Enterprise Admins
+Check:
+Get-ADGroupMember "Domain Admins"
+________________________________________
+12. Disable NTLM 
+Group Policy:
+Computer Configuration →
+Windows Settings →
+Security Settings →
+Local Policies →
+Security Options
+Set:
+•	Network security: Restrict NTLM → Deny All 
+________________________________________
+13. Disable Anonymous Enumeration
+Network access: Do not allow anonymous enumeration of SAM accounts
+Enabled
+________________________________________
+PHASE 7 - Logging & Detection (Domain controller)
+14. Enable Advanced Auditing(DOMAIN)
+On the Domain Controller:
+1.	Open Group Policy Management: gpmc.msc
+2.	Edit Default Domain Policy 
+3.	Go to:
+Computer Configuration
+ → Policies
+  → Windows Settings
+   → Security Settings
+    → Advanced Audit Policy Configuration
+     → Audit Policies
+Enable these categories 
+Account Logon
+•	Audit Credential Validation (Success, Failure) 
+Logon/Logoff
+•	Audit Logon (Success, Failure) 
+•	Audit Logoff (Success) 
+•	Audit Special Logon (Success) 
+Account Management
+•	Audit User Account Management (Success, Failure) 
+•	Audit Security Group Management (Success) 
+Privilege Use
+•	Audit Sensitive Privilege Use (Success, Failure) 
+Policy Change
+•	Audit Audit Policy Change (Success) 
+•	Audit Authentication Policy Change (Success) 
+System
+•	Audit Security System Extension (Success) 
+•	Audit System Integrity (Success, Failure) 
+Detailed Tracking (big win)
+•	Audit Process Creation (Success) 
+
+ Turn on “Process Creation Command Line” logging 
+This makes Event ID 4688 include the actual command line (how you catch attacker PowerShell).
+On each machine (or via GPO):
+GPO path
+Computer Configuration
+ → Policies
+  → Administrative Templates
+   → System
+    → Audit Process Creation
+     → Include command line in process creation events = Enabled
+
+Enable PowerShell Logging 
+GPO path
+Computer Configuration
+ → Policies
+  → Administrative Templates
+   → Windows Components
+    → Windows PowerShell
+Enable:
+•	Turn on Module Logging 
+Under Options, next to Module Names, click:
+Show…
+Add the module names 
+In the Show Contents window:
+Under Value name, type: *
+
+•	Turn on PowerShell Script Block Logging 
+•	Turn on PowerShell Transcription 
+C:\PSLogs\
+
+
+Apply policy:
+gpupdate /force
+________________________________________
+15. Increase Log Sizes(Every Box)
+•	PowerShell 
+•	wevtutil sl Security /ms:524288000
+•	wevtutil sl System /ms:209715200
+•	wevtutil sl Application /ms:209715200
+•	 
+________________________________________
+16. Install Sysmon(ALL MACHINES)	 IMPLEMENTATION WIP
+Download Sysmon from browser
+Sysmon64.exe -accepteula -i sysmonconfig.xml
+This gives:
+•	Process tracking
+•	Network connections
+•	Persistence detection
+________________________________________
+PHASE 8 — Malware Protection (ALL MACHINES)
+17. Microsoft Defender Hardening
+Set-MpPreference -DisableRealtimeMonitoring $false
+Set-MpPreference -EnableControlledFolderAccess Enabled
+Set-MpPreference -PUAProtection Enabled
+Run scan:
+Start-MpScan -ScanType FullScan
+________________________________________
+PHASE 9 — Application Hardening
+18. Web Server Hardening
+Steps
+1.	Open IIS Manager (inetmgr)
+2.	Expand Sites
+3.	Click Default Web Site
+4.	Open Content View
+________________________________________
+Disable Directory Browsing
+Directory browsing leaks files and configs.
+Steps
+1.	In IIS Manager
+2.	Select your website
+3.	Open Directory Browsing
+4.	Click Disable
+Verify:
+•	Browsing to / does NOT show file lists
+________________________________________
+Remove Unused IIS Modules (Attack Surface)
+Steps
+1.	Select the server name in IIS
+2.	Open Modules
+3.	Remove anything not required, such as:
+o	WebDAV (VERY dangerous if unused)
+________________________________________
+Lock Down Application Pool Identity 
+Steps
+1.	Open Application Pools
+2.	Select your app pool
+3.	Click Advanced Settings
+4.	Set:
+o	Identity → ApplicationPoolIdentity
+Do NOT run as:
+•	LocalSystem
+•	Administrator
+•	Domain Admin
+This prevents full system compromise via web exploit.
+________________________________________
+Disable HTTP Methods You Don’t Need
+Attackers abuse PUT, DELETE, OPTIONS.
+Steps
+1.	Select the website
+2.	Open Request Filtering
+3.	Go to HTTP Verbs
+4.	Allow only:
+o	GET
+o	POST
+Remove:
+•	PUT
+•	DELETE
+•	TRACE
+
+
+________________________________________
+ Lock File Permissions on Web Root 
+STEP 1 - Find the physical web root folder
+In IIS Manager (same screen):
+1.	Click Default Web Site
+2.	On the right, click Basic Settings…
+3.	Note the Physical path
+It will almost certainly be:
+C:\inetpub\wwwroot
+That is the folder we will lock down.
+________________________________________
+STEP 2 - Open NTFS permissions on the web root
+1.	Open File Explorer
+2.	Navigate to the web root folder (e.g. C:\inetpub\wwwroot)
+3.	Right-click the folder → Properties
+4.	Go to the Security tab
+5.	Click Advanced
+________________________________________
+STEP 3 — Disable inheritance (CRITICAL STEP)
+At the top of Advanced Security Settings:
+1.	Click Disable inheritance
+2.	Choose:
+Convert inherited permissions into explicit permissions
+ Do NOT choose “Remove all inherited permissions”
+This preserves working permissions while letting us trim them safely.
+________________________________________
+STEP 4 -Remove dangerous permission entries
+In the permissions list, remove these if present:
+ Everyone
+ Users (if they have Write / Modify)
+Authenticated Users (if they have Write / Modify)
+To remove:
+•	Click the entry
+•	Click Remove
+________________________________________
+STEP 5 - Set the CORRECT final permissions 
+Your final permissions should look like this:
+ SYSTEM
+•	Full control
+ Administrators
+•	Full control
+ IIS_IUSRS
+•	Read & execute
+•	List folder contents
+•	Read
+ NO Write
+ NO Modify
+________________________________________
+Application Pool Identity
+Your site is using an Application Pool.
+To be explicit and safe:
+1.	In IIS Manager:
+o	Click Application Pools
+o	Find the pool used by Default Web Site
+o	(Usually DefaultAppPool)
+2.	Go back to folder permissions
+3.	Click Add
+4.	Principal:
+5.	IIS AppPool\DefaultAppPool
+6.	Set location to WEBSERVER2019
+7.	Permissions:
+o	Read & execute
+o	List folder contents
+o	Read
+________________________________________
+STEP 6 - Apply permissions
+Click:
+•	Apply
+•	OK
+•	OK
+In IIS Manager:
+1.	Click Default Web Site
+2.	Double-click Authentication
+3.	Select Anonymous Authentication
+4.	In the right pane, click Edit…
+5.	Set Identity to:
+ Application pool identity
+6.	Click OK
+Now restart IIS:
+Iisreset
+
+IIS RAID PREVENTION
+STEP 1 - REMOVE WEB DAV 
+Open IIS Manager → Modules
+If you see:
+WebDAVModule
+Remove it.
+PowerShell:
+Remove-WebGlobalModule -Name WebDAVModule
+Also remove feature:
+Remove-WindowsFeature Web-DAV-Publishing
+________________________________________
+ STEP 2 - LOCK FILE EXTENSIONS
+In IIS:
+Site → Request Filtering → File Name Extensions
+Add Deny rules:
+.config
+.ps1
+.cmd
+.bat
+.exe
+.dll
+.cs
+.vbs
+.js
+PowerShell:
+Add-WebConfigurationProperty `
+  -Filter /system.webServer/security/requestFiltering/fileExtensions `
+  -Name "." `
+  -Value @{fileExtension=".ps1";allowed="false"}
+Repeat for dangerous types.
+________________________________________
+STEP 3 - DISABLE SCRIPT EXECUTION IN UPLOAD DIRECTORIES
+If site has uploads like:
+/uploads
+/images
+/files
+Create web.config inside that folder:
+<configuration>
+ <system.webServer>
+  <handlers accessPolicy="Read" />
+ </system.webServer>
+</configuration>
+
+________________________________________
+ STEP 4 - ENABLE REQUEST FILTERING PROTECTION
+In IIS:
+Request Filtering → URL → Deny Double Escaping = TRUE
+PowerShell:
+Set-WebConfigurationProperty `
+ -pspath 'MACHINE/WEBROOT/APPHOST' `
+ -filter "system.webServer/security/requestFiltering" `
+ -name "allowDoubleEscaping" `
+ -value "False"
+This kills many traversal attacks.
+________________________________________
+ STEP 5 - REMOVE UNUSED HANDLERS
+In IIS:
+Handler Mappings
+Remove anything you don’t need:
+*.cgi
+*.exe
+*.cmd
+*.php
+*.pl
+________________________________________
+STEP 6 - ENABLE FAILED REQUEST TRACING
+This lets you see attacks instantly.
+IIS → Site → Failed Request Tracing → Enable
+Add rule:
+Status Code: 400-999
+Logs appear here:
+C:\inetpub\logs\FailedReqLogFiles
+You’ll literally see the exploit attempts.
+________________________________________
+STEP 9 -nVERY STRONG EXTRA DEFENSE 
+Add URL filtering for suspicious patterns:
+IIS → Request Filtering → URL → Deny sequences:
+..
+%2e
+%5c
+cmd=
+powershell
+________________________________________
+HOW TO KNOW IF WE GET HIT
+Watch for these IIS logs:
+POST /upload.aspx
+PROPFIND
+OPTIONS
+PUT /shell.aspx
+Also check Event ID:
+4688 → w3wp.exe spawning powershell.exe
+----------------------------------------------------------------------------------------------------------
+
+FTP HARDENING (WINDOWS SERVER 2022) WIP
+STEP 1 - Confirm FTP Is Actually Being Used
+Before hardening, confirm FTP is required.
+Check IIS
+1.	Open IIS Manager (inetmgr)
+2.	Expand Sites
+3.	Look for an FTP Site
+If no FTP site exists → stop here (FTP not in use).
+________________________________________
+STEP 2 - Disable Anonymous FTP 
+This is the #1 FTP vulnerability.
+In IIS Manager:
+1.	Click your FTP Site
+2.	Double-click FTP Authentication
+3.	Ensure:
+o	 Anonymous Authentication = Disabled
+o	 Basic Authentication = Enabled
+________________________________________
+STEP 3 — Lock Down FTP Authorization Rules
+This controls who can log in and what they can do.
+Steps:
+1.	Open FTP Authorization Rules
+2.	Remove any rule that says:
+o	“All users”
+o	“Anonymous users”
+3.	Click Add Allow Rule
+4.	Choose Specified users or a dedicated group (recommended)
+Example:
+FTPUsers
+5.	Permissions:
+o	 Read
+o	 Write (ONLY if scoring requires uploads)
+Click OK
+________________________________________
+STEP 4 — Create a Dedicated FTP Root Directory (CRITICAL)
+ NEVER use:
+•	C:\
+•	C:\inetpub
+•	C:\Windows
+Recommended:
+D:\FTPData
+(or C:\FTPData if no D: drive)
+Create it now if it doesn’t exist.
+________________________________________
+STEP 5 - NTFS Permissions on FTP Root (VERY IMPORTANT)
+Right-click the FTP root → Properties → Security → Advanced
+Final permissions should be:
+Principal	Permissions
+SYSTEM	Full control
+Administrators	Full control
+FTPUsers (or specific users)	Read / Write (only if needed)
+IIS_IUSRS	Read & Execute
+ No Everyone
+No Authenticated Users
+ No Modify for generic users unless uploads required
+Apply to:
+This folder, subfolders and files
+________________________________________
+STEP 6 - Restrict Users to Their Own FTP Directories
+This prevents users from browsing the entire FTP tree.
+In IIS Manager:
+1.	Click your FTP Site
+2.	Double-click FTP User Isolation
+3.	Select:
+4.	User name directory (disable global virtual directories)
+Folder structure must be:
+D:\FTPData\
+  └── username1
+  └── username2
+Each folder:
+•	Owned by that user
+•	NTFS permissions scoped to that user
+This is huge for containment.
+________________________________________
+STEP 7 -Lock FTP Passive Ports (You Already Started This)
+FTP must use a limited passive range.
+In IIS Manager:
+1.	Click the server name
+2.	Open FTP Firewall Support
+3.	Set:
+4.	Data Channel Port Range: 50000-50100
+5.	Click Apply
+Firewall:
+Allow inbound TCP:
+21
+50000–50100
+ Do NOT leave wide dynamic ranges.
+________________________________________
+STEP 8 - Enforce FTP over TLS (FTPS) IF SCORING ALLOWS
+ Only do this if scoring supports FTPS.
+In IIS Manager:
+1.	Click FTP Site
+2.	Open FTP SSL Settings
+3.	Set:
+o	SSL Certificate → select one
+o	Control Channel → Require SSL
+o	Data Channel → Require SSL
+If unsure → leave SSL optional (don’t break scoring).
+________________________________________
+STEP 9 - Disable Dangerous FTP Commands 
+In FTP Request Filtering:
+•	Block:
+o	APPE
+o	SITE
+o	EXEC
+This prevents command abuse.
+________________________________________
+STEP 10 - Enable FTP Logging 
+In IIS Manager:
+1.	Click FTP Site
+2.	Open FTP Logging
+3.	Enable logging
+4.	Log:
+o	Client IP
+o	Username
+o	Commands
+o	Status codes
+Logs default to:
+C:\inetpub\logs\LogFiles
+Review often.
+
+
+________________________________________
+
+PHASE 10 -Persistence & Backdoors Check
+22. Startup & Scheduled Tasks
+Get-ScheduledTask
+Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Run
+Remove anything suspicious.
+
+PHASE 11- Logging Fun (All MACHINES)
+RUN SCRIPT FIRST, IF DOES NOT WORK, BELOW ARE manual STEPS
+Run LoggingFun.ps1
+Verify by running 
+auditpol /get /subcategory:"Process Creation"
+wevtutil gl "Microsoft-Windows-PowerShell/Operational"
+Get-Content $env:SystemRoot\System32\LogFiles\Firewall\pfirewall.log -Tail 20
+
+Manual STEPS DO IF SCRIPT DOESN’T WORK 
+Turn Windows Into an EDR-Lite 
+Run on each Windows machine:
+auditpol /set /category:"Logon/Logoff" /success:enable /failure:enable
+auditpol /set /category:"Account Logon" /success:enable /failure:enable
+auditpol /set /category:"Account Management" /success:enable /failure:enable
+auditpol /set /category:"Detailed Tracking" /success:enable /failure:enable
+auditpol /set /subcategory:"Process Creation" /success:enable
+auditpol /set /subcategory:"Security System Extension" /success:enable
+Then enable command-line logging:
+reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\Audit" /v ProcessCreationIncludeCmdLine_Enabled /t REG_DWORD /d 1 /f
+What this gives you
+You start seeing:
+•	4688 → Process creation
+________________________________________
+Enable PowerShell Script Block Logging 
+Enable:
+reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging /v EnableScriptBlockLogging /t REG_DWORD /d 1 /f
+Now you get:
+Event ID 4104
+Which literally shows the commands attackers run.
+________________________________________
+Add IIS Failed Request Tracing 
+You said IIS RAID exploit hit you — this would have exposed it instantly.
+Enable:
+IIS Manager → Site → Failed Request Tracing
+Add rule:
+Status codes: 400–999
+Logs go here:
+C:\inetpub\logs\FailedReqLogFiles
+Forward that folder into Splunk if allowed.
+________________________________________
+Build a “High-Signal Event ID List”
+Instead of watching logs, watch ONLY the events that matter.
+Intrusion Critical (alert instantly)
+7045  New service installed
+1102  Security log cleared
+4720  New user created
+4728/4732 Added to admin group
+4698  Scheduled task created
+Lateral Movement / Auth
+4625  Failed logon
+4624  Logon type 10 (RDP)
+4672  Admin privileges assigned
+4776  NTLM auth
+ Execution
+4688  Process created
+4104  PowerShell script block
+If you monitor only these, noise drops by ~80%.
+________________________________________
+Turn On Windows Defender Logging 
+Even if Defender isn’t your main tool, its logs are amazing signals.
+Forward this log:
+Microsoft-Windows-Windows Defender/Operational
+Watch for:
+1116 Malware detected
+1117 Remediated
+________________________________________
+Add Firewall Logging
+Enable:
+Set-NetFirewallProfile -LogAllowed True -LogBlocked True -LogFileName %systemroot%\system32\LogFiles\Firewall\pfirewall.log
+Forward that file to Splunk.
+________________________________________
+Stage	Events
+Initial access	IIS logs + 4104
+Credential abuse	4625,4776
+Privilege escalation	4672,4728
+Persistence	7045,4698
+Cleanup	1102
+________________________________________
+
