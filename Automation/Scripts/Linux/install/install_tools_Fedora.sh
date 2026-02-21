@@ -28,12 +28,4 @@ sleep 5
 
 #Standardize Fedora with similar Ubuntu tools
 
-echo "---Starting ufw setup.---"
-sudo systemctl stop firewalld
-sudo systemctl disable firewalld
-
-#Install ufw
-sudo dnf -y install ufw
-sudo ufw enable
-
 #Specific setup for Fedora done, rest of tool setup is in general and should be in the main.sh
