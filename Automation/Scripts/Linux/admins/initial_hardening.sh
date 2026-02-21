@@ -49,15 +49,17 @@ if [[ "$OS_ID" == "ubuntu" || "$OS_ID" == "debian" ]]; then
     ufw default allow outgoing
 
     ufw allow 123/udp
+    ufw allow 8089/tcp
 
 case "$ROLE" in
     1)
-      echo "Ubuntu Workstation selected (NTP only)."
+      echo "Ubuntu Workstation selected (NTP, Splunk only)."
       ;;
     3)
       echo "Ubuntu E-commerce selected."
       ufw allow 80/tcp
       ufw allow 443/tcp
+      ufw allow 8089/tcp
       ;;
     *)
       echo "Invalid role for Ubuntu."
@@ -92,6 +94,7 @@ if [[ "$OS_ID" == "fedora" || "$OS_ID" == "ol" || "$OS_ID" == "oraclelinux" ]]; 
       firewall-cmd --permanent --add-port=25/tcp
       firewall-cmd --permanent --add-port=110/tcp
       firewall-cmd --permanent --add-port=587/tcp
+      firewall-cmd --permanent --add-port=8089/tcp
       ;;
     4)
       echo "Oracle Splunk selected."

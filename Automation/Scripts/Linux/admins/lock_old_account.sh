@@ -14,20 +14,6 @@ if ! id "$OLD_ADMIN" &>/dev/null; then
     exit 1
 fi
 
-echo "Enter a new password for $OLD_ADMIN before disabling:"
-read -s NEW_PASS
-echo
-read -s -p "Confirm password: " CONFIRM_PASS
-echo
-
-if [[ "$NEW_PASS" != "$CONFIRM_PASS" ]]; then
-    echo "Passwords do not match. Exiting."
-    exit 1
-fi
-
-# Set new password
-echo "$OLD_ADMIN:$NEW_PASS" | chpasswd
-
 echo "Removing admin privileges (sudo/wheel if present)..."
 
 # Ubuntu admin group
